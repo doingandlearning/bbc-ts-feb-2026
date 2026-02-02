@@ -7,7 +7,7 @@
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
-    "target": "es2024",
+    "target": "es2020",
     "types": ["node"],
     // For nodejs:
     // "lib": ["esnext"],
@@ -34,7 +34,6 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
-    "noEmitOnError": false
+    "skipLibCheck": true
   }
 }
