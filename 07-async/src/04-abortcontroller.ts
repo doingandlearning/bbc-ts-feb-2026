@@ -23,7 +23,19 @@ async function doSomething(signal: typeof ac.signal) {
       reject(new Error("Aborted!"));
     }
 
-    // resolve
+    const onAbort = () => {
+      clearTimeout(workTimer);
+      const err = new Error("Aborted");
+      (err as any).name = "AbortError";
+      reject(err);
+    };
+
+    signal.addEventListener("abort", onAbort, { once: true });
+
+    const workTimer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve("Done!");
+    }, 5000);
   });
 }
 doSomething(ac.signal);
