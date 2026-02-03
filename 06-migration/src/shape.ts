@@ -1,29 +1,30 @@
+import type {
+  ValidShape,
+  Circle,
+  Rectangle,
+  RightTriangle,
+  Square,
+} from "./shape.types";
+
 const PI = Math.PI;
 
-/** 
- * JSDOC
- * @param { number } radius
-  */
-function getCircleArea(radius) {
+function getCircleArea(radius: number) {
   return radius * radius * PI;
 }
 
-
-
-// @ts-expect-error TODO: deal with implicit any
-function getRectangleArea(length, width) {
+function getRectangleArea(length: number, width: number) {
   return length * width;
 }
 
-function getSquareArea(width) {
+function getSquareArea(width: number) {
   return getRectangleArea(width, width);
 }
 
-function getRightTriangleArea(base, height) {
+function getRightTriangleArea(base: number, height: number) {
   return (base * height) / 2;
 }
 
-function getArea(shape) {
+function getArea(shape: ValidShape) {
   switch (shape.type) {
     case "circle":
       shape.area = getCircleArea(shape.radius);
@@ -36,25 +37,29 @@ function getArea(shape) {
       break;
     case "rightTriangle":
       shape.area = getRightTriangleArea(shape.base, shape.height);
-      break;
   }
 }
 
-const circle = { type: "circle", radius: 4 };
+const circle: Circle = {
+  type: "circle",
+  radius: 4,
+};
 getArea(circle);
 console.log(circle);
 
-const rectangle = { type: "rectangle", length: 7, width: 4 };
+const rectangle: Rectangle = { type: "rectangle", length: 7, width: 4 };
 
 getArea(rectangle);
 console.log(rectangle);
 
-const square = { type: "square", width: 5 };
+const square = { type: "square", width: 5 } satisfies Square;
 getArea(square);
 console.log(square);
 
-const rightTriangle = { type: "rightTriangle", base: 9, height: 4 };
+const rightTriangle: RightTriangle = {
+  type: "rightTriangle",
+  height: 4,
+  base: 5,
+};
 getArea(rightTriangle);
 console.log(rightTriangle);
-
-let number = 6;
