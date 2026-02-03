@@ -1,166 +1,219 @@
-# Section 2 — Initialising New Projects
+# Section 5 — Narrowing and Widening
 
-These notes walk through the typical steps and files you create when starting a new TypeScript + Node project. Read them before you run the commands so you understand what each file and option does.
+TypeScript constantly adjusts how *specific* (narrow) or *general* (wide) a type is. Understanding when and why this happens helps you write safer code with fewer assertions.
 
-## Overview (what we’ll create)
+---
 
-- package.json (npm project manifest + scripts)
-- package-lock.json (exact dependency tree)
-- node_modules/ (installed packages)
-- tsconfig.json (TypeScript compiler options)
-- src/ (your TypeScript source)
-- dist/ (compiled output)
+## Widening: when types get looser
 
-## Common commands (sequence used in class)
+When you declare variables with `let`, TypeScript often **widens** their types so they can change later.
 
-1. npm init
-2. npm install -D typescript tsx @types/node
-3. npx tsc --init
-4. Edit package.json scripts and tsconfig.json as needed
-5. npm run dev (during development)
-6. npm run build && npm start (for production/serve)
+```ts
+let vec = { x: 10, y: 20, z: 30 };
+```
 
-Example scripts added to package.json:
+Here, `vec` is inferred as:
 
-- "dev": "tsx --watch src/app.ts" — run the app from TS and watch for changes (tsx runs TS directly).
-- "build": "tsc" — compile to JavaScript in dist/.
-- "start": "node dist/app.js" — run compiled output.
-- "test": placeholder for tests.
+```ts
+{ x: number; y: number; z: number }
+```
 
-Dev dependencies in the example:
+not `{ x: 10; y: 20; z: 30 }`. This is intentional: `let` means “this might change”.
 
-- typescript — the compiler
-- tsx — fast dev runner for TypeScript/ESM
-- @types/node — Node.js type declarations (useful when using Node APIs)
+Similarly:
 
-## What each file does
+```ts
+let axis: Axis = "x";
+const axis2 = "x";
+```
 
-- package.json
-  - Describes the project and contains npm scripts.
-  - Stores dependency metadata (devDependencies vs dependencies).
-  - Consider adding "type": "module" if you want Node to treat .js as ESM; otherwise Node behavior depends on file extensions (.mjs/.cjs) and tsconfig.module settings.
+* `axis` is widened to `"x" | "y" | "z"`
+* `axis2` stays narrow as `"x"`
 
-- package-lock.json
-  - Records exact installed versions (reproducible installs).
-  - Commit it to version control for apps; libraries may have different considerations.
+That difference matters when passing values around.
 
-- node_modules/
-  - Installed packages — do not commit this folder; add to .gitignore.
+```ts
+getComponent(vec, axis);
+getComponent(vec, axis2);
+```
 
-- tsconfig.json
-  - Central place to configure TypeScript compilation behavior (explained below).
+Both work — but only because `axis2` stayed narrow.
 
-## tsconfig.json — key options from the example and what they mean
+---
 
-- rootDir: "./src"
-  - Where your TypeScript source files live. Compiler will treat this as the project root for sources.
+## Narrowing: when types get more specific
 
-- outDir: "./dist"
-  - Where compiled JavaScript and maps are emitted.
+TypeScript narrows types when you prove something at runtime.
 
-- module: "nodenext"
-  - Node + ESM-aware module semantics (recommended for Node ESM projects). Requires matching Node / package.json settings (see "type": "module") or using .mts/.cts extensions.
+### Truthy checks
 
-- target: "es2024"
-  - Language level to emit. Pick a target compatible with the Node version you intend to run on (newer targets produce less-transpiled output).
+```ts
+const elem = document.getElementById("headline");
 
-- types: ["node"]
-  - Include Node type declarations (requires @types/node dev dependency).
+if (elem) {
+  elem.onabort;
+}
+```
 
-- sourceMap: true
-  - Emit source maps so debuggers and stack traces map back to TypeScript.
+Inside the `if`, `elem` is narrowed from `HTMLElement | null` to `HTMLElement`.
 
-- noUncheckedIndexedAccess: true
-  - Makes reading from index signatures produce possibly undefined results — safer but stricter.
+Optional chaining does *not* narrow:
 
-- exactOptionalPropertyTypes: true
-  - Differentiates between optional properties and properties that may be undefined.
+```ts
+elem?.onclick;
+```
 
-- strict: true
-  - Enables the strict type checking family (recommended).
+That’s safe, but it doesn’t change the type of `elem` afterwards.
 
-- jsx: "react-jsx"
-  - JSX transform variant (only relevant if you use JSX/React).
+---
 
-- verbatimModuleSyntax: true
-  - Emit module syntax closer to the source; useful with Node ESM and bundlers.
+### `typeof` and `instanceof`
 
-- isolatedModules: true
-  - Ensure each file can be transpiled in isolation (helps with tools like tsx, Babel).
+Classic narrowing tools:
 
-- noUncheckedSideEffectImports: true
-  - Warn if imports are used for side-effects but cannot be checked by TS (newer checks).
+```ts
+function contains(text: string, search: string | RegExp) {
+  if (typeof search === "string") {
+    return text.includes(search);
+  }
+  return Boolean(search.exec(text));
+}
+```
 
-- moduleDetection: "force"
-  - Force module detection to treat files as modules (useful when mixing scripts/modules).
+Or using `instanceof`:
 
-- skipLibCheck: true
-  - Skip type checking of declaration files to speed up compilation (tradeoff: subtle lib mismatches may be missed).
+```ts
+function contains2(text: string, search: string | RegExp) {
+  if (search instanceof RegExp) {
+    return Boolean(search.exec(text));
+  }
+  return text.includes(search);
+}
+```
 
-Notes:
+Each branch has a more specific type.
 
-- "declaration" and "declarationMap" are commented out. If you’re authoring a library, enable "declaration": true to emit .d.ts files.
-- If you rely on Node global APIs, install @types/node and keep types: ["node"].
-- Adjust "target" and "module" for compatibility with your Node runtime or browser targets.
+---
 
-## Development workflow
+### Property checks (`in`)
 
-- Dev (fast iteration)
-  - Use tsx --watch src/app.ts (or ts-node-dev, nodemon+tsx) to run TypeScript directly and reload on changes.
-  - Keep source in src/ so tsc outDir works predictably.
+Checking for a property narrows unions of object types:
 
-- Build & Run (production)
-  - npm run build → transpiles TS to JS in dist/
-  - npm start → run dist/app.js with node
+```ts
+function pickFruit(fruit: Apple | Orange) {
+  if ("isGoodForBaking" in fruit) {
+    return fruit; // Apple
+  } else {
+    return fruit; // Orange
+  }
+}
+```
 
-## Best practices / recommendations
+This works well when properties are unique.
 
-- Add a .gitignore with at least:
-  - node_modules/
-  - dist/
-  - .env (if using env files)
-- Keep source in src/ and output to dist/.
-- Use devDependencies for build/dev tools (typescript, tsx, @types/\*). Use dependencies for runtime libraries needed by your app when installed by end-users.
-- Enable strict type checking (strict: true) to catch issues early.
-- Choose a target appropriate for the Node version you run; upgrade Node to use newer ES targets.
-- For Node ESM projects:
-  - Either set package.json "type": "module" or use .mjs/.cjs file extensions.
-  - Using "module": "nodenext" in tsconfig helps with Node's dual ESM/CJS semantics.
-- Use source maps during development to get accurate stack traces.
-- If publishing a library, enable "declaration": true and consider "moduleResolution" settings.
-- Commit package-lock.json to ensure deterministic installs for apps.
+---
+
+## Discriminated unions (the gold standard)
+
+A **discriminant** is a shared literal property (often `status` or `type`).
+
+```ts
+type States<DataType> =
+  | { status: "loading"; progress?: number }
+  | { status: "success"; data: DataType; timestamp: Date }
+  | { status: "error"; error: string; retryable: boolean };
+```
+
+Narrowing becomes automatic:
+
+```ts
+function evaluateState<T>(state: States<T>) {
+  switch (state.status) {
+    case "loading":
+      state.progress;
+      break;
+    case "success":
+      state.data;
+      break;
+    case "error":
+      state.retryable;
+      break;
+  }
+}
+```
+
+This is the most robust and readable narrowing pattern.
+
+---
+
+## User-defined type guards
+
+You can teach TypeScript how to narrow.
+
+```ts
+function isAdmin(user: User): user is Admin {
+  return user.role === "admin";
+}
+
+function processUser(user: User) {
+  if (isAdmin(user)) {
+    user.permissions;
+  }
+}
+```
+
+The return type `user is Admin` is the key.
+
+---
+
+## Avoiding over-widening with `satisfies`
+
+`satisfies` checks a shape **without changing** the inferred type.
+
+```ts
+const theme = {
+  primary: "#3b82f6",
+  secondary: "#64748b",
+  success: "#10b981",
+} as const satisfies Theme;
+```
+
+* You get literal types (`"#3b82f6"`)
+* You still get structural validation against `Theme`
+
+This is safer than a plain type annotation.
+
+---
 
 ## Common pitfalls & quick fixes
 
-- "Cannot use import statement outside a module"
-  - Ensure Node treats the file as a module: add "type": "module" in package.json, or compile to CommonJS, or use correct .mjs/.cjs extensions.
+* **Using `as` too early**
+  → Try narrowing first; assertions hide bugs.
 
-- ESM / CJS mismatch (ERR_REQUIRE_ESM)
-  - Align tsconfig.module + package.json "type" + runtime expectations. For Node ESM use "nodenext" or output ESM files; for CommonJS use "commonjs".
+* **Optional chaining expecting narrowing**
+  → It doesn’t. Use an `if` check.
 
-- Missing Node types (TypeScript errors for global Node names)
-  - Install @types/node and add "types": ["node"] to tsconfig or include it via typeRoots.
+* **Enums for simple keys**
+  → String unions are usually clearer and narrower.
 
-- Declaration files missing for libraries
-  - Either install @types/yourlib or add a manual declaration (.d.ts) if necessary.
+* **Forgetting discriminants**
+  → Add a `status` or `type` field.
 
-- Slow build times
-  - Use incremental builds: add "incremental": true in tsconfig, and consider project references for very large repos.
+---
 
-## Quick command cheat sheet
+## What to remember
 
-- Initialize project: npm init
-- Install dev tools: npm install -D typescript tsx @types/node
-- Create tsconfig.json: npx tsc --init
-- Run in dev mode: npm run dev
-- Build: npm run build
-- Run compiled code: npm start
+* `let` widens, `const` narrows
+* Runtime checks drive compile-time narrowing
+* Discriminated unions scale best
+* User-defined guards make intent explicit
+* Prefer `satisfies` over broad annotations
 
-## Short checklist (before first commit)
+---
 
-- [ ] src/ directory exists with an entry (src/app.ts)
-- [ ] tsconfig.json configured (rootDir, outDir, target, module)
-- [ ] package.json scripts include dev, build, start
-- [ ] devDependencies installed (typescript, tsx, @types/node)
-- [ ] .gitignore contains node_modules/ and dist/
-- [ ] package-lock.json committed
+### Final checklist
+
+* [ ] Can I explain why this value is widened or narrow?
+* [ ] Am I narrowing with checks instead of assertions?
+* [ ] Would a discriminated union simplify this?
+* [ ] Do I really need `as`, or is there a safer way?
