@@ -59,6 +59,7 @@ function simulateDom() {
   // block scope
   // never use var! use const when can and let when you have to.
   for (let i = 1; i <= 3; i++) {
+    // @ts-expect-error
     var element = pseudoDom[`button${i}`];
     element.click = function () {
       return `Item ${i} is clicked.`;

@@ -18,7 +18,7 @@ console.log(people2);
 console.log(people);
 
 const newPeople = JSON.parse(JSON.stringify(people));
-people2[0].name = "Declan";
+people2[0]!.name = "Declan";
 console.log(people);
 console.log(newPeople);
 
