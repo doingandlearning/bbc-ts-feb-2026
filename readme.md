@@ -36,3 +36,5 @@ Unit 9: Error Handling - Making failure explicit: no error handling, returning n
 Unit 10: Creating Types from Others - Type composition toolkit: generics (types with parameters), constraining generics with extends, utility types (Pick, Readonly, Partial), conditional types (types with logic), and mapped types with in (keyof transformations).
 
 Unit 11: Testing - Testing in TypeScript: testing pure functions, what TypeScript gives you in tests, testing async code, mocking and isolation (light touch), and what not to over-test. Focus on behavior, not types.
+
+Unit 12: Kitchen Sink - function overloading, tuples and records, branded types, const type,

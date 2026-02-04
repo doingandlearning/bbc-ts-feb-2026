@@ -7,3 +7,9 @@ function sayHello(location: string) {
 }
 
 sayHello(location);
+
+const paragraph = document.createElement("p");
+paragraph.innerText = "Webpack is cool!";
+
+const container = document.getElementById("app");
+container?.append(paragraph);
