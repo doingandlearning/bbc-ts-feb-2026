@@ -1,7 +1,5 @@
 # Exercise: Blog API 📝
 
-> **Part 2: Section 4: Generics**
-
 ## Setup
 
 Change into the start directory:
@@ -35,7 +33,7 @@ Make an API request using the new function and log the return value:
 
 ```typescript
 const post = await makeApiRequest(
-  "https://jsonplaceholder.typicode.com/posts/1"
+  "https://jsonplaceholder.typicode.com/posts/1",
 );
 
 console.log({ post });
@@ -103,7 +101,7 @@ Add an API request to retrieve the blog post comments and log out the response:
 
 ```typescript
 const comments = await makeApiRequest(
-  "https://jsonplaceholder.typicode.com/posts/1/comments"
+  "https://jsonplaceholder.typicode.com/posts/1/comments",
 );
 
 console.log({ comments });
