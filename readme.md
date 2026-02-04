@@ -5,6 +5,8 @@
   - https://kevincunningham.co.uk
   - kevin@kevincunningham.co.uk
 
+- [Feedback](https://forms.office.com/e/G68XfP7u4h)
+
 # Timings
 
 - 9:30-11 Session 1

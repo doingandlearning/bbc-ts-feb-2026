@@ -85,4 +85,5 @@ $RECYCLE.BIN/
 .npm/
 .pnpm-store/
 
+.github
 # End of file
